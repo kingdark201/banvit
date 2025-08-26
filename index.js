@@ -71,6 +71,7 @@ const NUM_CLOUDS = 3;
 
 let isDragging = false;
 let lastDragX = 0;
+let targetPlayerX = null;
 const PLAYER_SPECIAL_SHOT_TRIGGER = 25;
 const BOT_SPECIAL_SHOT_TRIGGER = 10;
 
@@ -99,28 +100,21 @@ const bot = { x: 0, y: 0, width: 80, height: 80, hp: 30, maxHp: 30, speed: 3, da
 function handleDragStart(e) {
     e.preventDefault();
     isDragging = true;
-    lastDragX = e.clientX || e.touches[0].clientX;
+    const currentX = e.clientX || e.touches[0].clientX;
+    targetPlayerX = currentX - player.width / 2;
 }
 
 function handleDragMove(e) {
     if (!isDragging || gameState !== 'PLAYING') return;
     e.preventDefault();
     const currentX = e.clientX || e.touches[0].clientX;
-    const targetX = currentX - player.width / 2;
-    const dx = targetX - player.x;
-    if (Math.abs(dx) <= player.speed) {
-        player.x = targetX;
-    } else {
-        player.x += player.speed * Math.sign(dx);
-    }
-    player.x = Math.max(0, Math.min(LOGICAL_W - player.width, player.x));
-    lastDragX = currentX;
+    targetPlayerX = currentX - player.width / 2;
 }
-
 
 function handleDragEnd(e) {
     e.preventDefault();
     isDragging = false;
+    targetPlayerX = null;
 }
 
 function warmUpAudio() {
@@ -502,7 +496,15 @@ function update() {
         spawnPowerUp();
         powerUpSpawnTimer = 0;
     }
-    player.x = Math.max(0, Math.min(LOGICAL_W - player.width, player.x));
+    if (targetPlayerX !== null) {
+        const dx = targetPlayerX - player.x;
+        if (Math.abs(dx) <= player.speed) {
+            player.x = targetPlayerX;
+        } else {
+            player.x += player.speed * Math.sign(dx);
+        }
+        player.x = Math.max(0, Math.min(LOGICAL_W - player.width, player.x));
+    }
     player.fireTimer++;
     if (player.fireTimer >= player.fireRate && !player.isAnimating) {
         player.isAnimating = true; player.animationTimer = 0; player.fireTimer = 0;

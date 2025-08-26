@@ -333,7 +333,7 @@ function showOverlay(type, details = {}) {
 
     switch (type) {
         case 'start':
-            titleEl.textContent = "Bắn Vịt";
+            titleEl.textContent = "Bắn Tùm Lum";
             textEl.textContent = `Sẵn sàng cho màn ${currentLevel}?`;
             mainActionBtn.textContent = "Tiếp Tục";
             mainActionBtn.onclick = () => {

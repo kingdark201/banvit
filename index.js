@@ -50,14 +50,10 @@ const ANIMATION_SQUASH_TIME = 15;
 const ANIMATION_STRETCH_TIME = 10;
 const ANIMATION_RECOVER_TIME = 20;
 const ANIMATION_TOTAL_TIME = ANIMATION_SQUASH_TIME + ANIMATION_STRETCH_TIME + ANIMATION_RECOVER_TIME;
-
-
 const BASE_PLAYER_HP = 100;
 const BASE_PLAYER_DAMAGE = 10;
 const BASE_PLAYER_SPEED = 5;
 const BASE_PLAYER_FIRERATE_SECONDS = 1;
-
-
 const BASE_BOT_HP = 30;
 const BASE_BOT_DAMAGE = 5;
 const BASE_BOT_SPEED = 3;
@@ -67,15 +63,14 @@ let specialAttacks = [];
 let healthPacks = [];
 let playerShotCounter = 0;
 let botShotCounter = 0;
-
 let powerUps = [];
 let powerUpSpawnTimer = 0;
 const POWERUP_SPAWN_INTERVAL = 60 * 15;
-
 let clouds = [];
 const NUM_CLOUDS = 3;
 
-
+let isDragging = false;
+let lastDragX = 0;
 const PLAYER_SPECIAL_SHOT_TRIGGER = 25;
 const BOT_SPECIAL_SHOT_TRIGGER = 10;
 
@@ -101,6 +96,33 @@ const assetFileNames = {
 const player = { x: 0, y: 0, width: 60, height: 60, hp: 100, maxHp: 100, speed: 5, bullets: [], fireRate: 60, fireTimer: 0, damage: 10, scaleX: 1, scaleY: 1, isAnimating: false, animationTimer: 0, hasSpecialShot: false };
 const bot = { x: 0, y: 0, width: 80, height: 80, hp: 30, maxHp: 30, speed: 3, damage: 5, bullets: [], dir: 1, changeDirTimer: 0, nextDirChange: 120, fireRateFrames: 120, scaleX: 1, scaleY: 1, isAnimating: false, animationTimer: 0 };
 
+function handleDragStart(e) {
+    e.preventDefault();
+    isDragging = true;
+    lastDragX = e.clientX || e.touches[0].clientX;
+}
+
+function handleDragMove(e) {
+    if (!isDragging || gameState !== 'PLAYING') return;
+    e.preventDefault();
+    const currentX = e.clientX || e.touches[0].clientX;
+    const targetX = currentX - player.width / 2;
+    const dx = targetX - player.x;
+    if (Math.abs(dx) <= player.speed) {
+        player.x = targetX;
+    } else {
+        player.x += player.speed * Math.sign(dx);
+    }
+    player.x = Math.max(0, Math.min(LOGICAL_W - player.width, player.x));
+    lastDragX = currentX;
+}
+
+
+function handleDragEnd(e) {
+    e.preventDefault();
+    isDragging = false;
+}
+
 function warmUpAudio() {
     const allSounds = [
         playerShootSound, botShootSound, playerHitSound, botHitSound,
@@ -122,11 +144,9 @@ function warmUpAudio() {
 function initializeClouds() {
     clouds = [];
     for (let i = 0; i < NUM_CLOUDS; i++) {
-
         const img = Math.random() > 0.5 ? cloud1Img : cloud2Img;
         const width = Math.random() * 100 + 80;
         const height = width * (img.naturalHeight / img.naturalWidth || 1);
-
         clouds.push({
             img: img,
             x: Math.random() * LOGICAL_W,
@@ -140,18 +160,12 @@ function initializeClouds() {
 }
 
 
-// === THAY THẾ TOÀN BỘ HÀM CŨ BẰNG HÀM MỚI NÀY ===
+
 function loadAssetsForLevel(level) {
-    // 1. Tính "cấp độ ảo" để lặp lại sau mỗi 40 màn
     const virtualLevel = ((level - 1) % 40) + 1;
-
-    // 2. Xác định chỉ số của thư mục (tier) dựa trên cấp độ ảo
     const tierIndex = Math.min(assetFolders.length - 1, Math.floor((virtualLevel - 1) / 10));
-
-    // 3. Lấy ra tên thư mục hiện tại
     const currentFolder = assetFolders[tierIndex];
 
-    // 4. Tự động tạo đường dẫn và gán .src cho các đối tượng ẢNH
     playerImg.src = `images/${currentFolder}/${assetFileNames.player}`;
     botImg.src = `images/${currentFolder}/${assetFileNames.bot}`;
     playerBulletImg.src = `images/${currentFolder}/${assetFileNames.playerBullet}`;
@@ -160,16 +174,13 @@ function loadAssetsForLevel(level) {
     healthPackImg.src = `images/${currentFolder}/${assetFileNames.healthPack}`;
     powerUpImg.src = `images/${currentFolder}/${assetFileNames.powerUp}`;
     botBreakImg.src = `images/${currentFolder}/${assetFileNames.botBreak}`;
-
-    // === THÊM MỚI: Tự động tạo đường dẫn và gán .src cho ÂM THANH ===
     const soundSrc = `images/${currentFolder}/${assetFileNames.botHitSound}`;
-    // Chỉ thay đổi và tải lại nếu nguồn âm thanh thực sự khác
+    
     if (!botHitSound.src.endsWith(soundSrc)) {
         botHitSound.src = soundSrc;
-        botHitSound.load(); // Yêu cầu trình duyệt tải file âm thanh mới
+        botHitSound.load(); 
     }
-
-    // Các ảnh không thay đổi
+    
     bgImg.src = 'images/background.png';
     cloud1Img.src = 'images/cloud1.png';
     cloud2Img.src = 'images/cloud2.png';
@@ -183,14 +194,12 @@ function playSound(soundElement, volume = 1) {
     }
 }
 
-
 function createExplosion(x, y, color) {
     const particleCount = 20;
     for (let i = 0; i < particleCount; i++) {
         particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, size: Math.random() * 5 + 2, color: color, lifespan: 60 });
     }
 }
-
 
 function spawnHealthPack() {
     healthPacks.push({
@@ -201,7 +210,6 @@ function spawnHealthPack() {
         speed: 3
     });
 }
-
 
 function spawnSpecialAttack() {
     specialAttacks.push({
@@ -453,9 +461,18 @@ document.getElementById('closeBotInfoModal').onclick = () => { playButtonClick()
 document.getElementById('btnReset').onclick = openResetConfirmModal;
 document.getElementById('btnCancelReset').onclick = () => { playButtonClick(); resetConfirmModal.style.display = 'none'; };
 document.getElementById('btnConfirmReset').onclick = executeReset;
+
+canvas.addEventListener('mousedown', handleDragStart);
+window.addEventListener('mousemove', handleDragMove); 
+window.addEventListener('mouseup', handleDragEnd);
+canvas.addEventListener('mouseleave', handleDragEnd); 
+
+canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+canvas.addEventListener('touchmove', handleDragMove, { passive: false });
+canvas.addEventListener('touchend', handleDragEnd, { passive: false });
+canvas.addEventListener('touchcancel', handleDragEnd, { passive: false });
+
 let botShootTimer = 0;
-
-
 function handleEntityAnimation(entity, shootFunction, sound) {
     if (entity.isAnimating) {
         entity.animationTimer++;
@@ -485,8 +502,6 @@ function update() {
         spawnPowerUp();
         powerUpSpawnTimer = 0;
     }
-    if (keys['ArrowLeft']) player.x -= player.speed;
-    if (keys['ArrowRight']) player.x += player.speed;
     player.x = Math.max(0, Math.min(LOGICAL_W - player.width, player.x));
     player.fireTimer++;
     if (player.fireTimer >= player.fireRate && !player.isAnimating) {
@@ -526,11 +541,8 @@ function update() {
     player.bullets.forEach(b => {
         if (isColliding(b, bot)) {
             createExplosion(b.x + b.width / 2, b.y, '#ff8503ff');
-
-
             const damageDealt = b.isSpecial ? player.damage * 10 : player.damage;
-            bot.hp -= damageDealt;
-
+            bot.hp = Math.max(0, bot.hp - damageDealt);
             b.y = -9999;
             playSound(botHitSound, 0.4);
         }
@@ -540,15 +552,12 @@ function update() {
         if (b.isBroken) {
             const FADE_DURATION = 2000;
             const elapsedTime = Date.now() - b.breakTime;
-
             if (elapsedTime >= FADE_DURATION) {
                 b.toRemove = true;
             } else {
-
                 b.alpha = 1 - (elapsedTime / FADE_DURATION);
             }
         } else {
-
             b.x += b.vx;
             b.y += b.vy;
             const groundLevelY = player.y + player.height + 8 + 14;
@@ -572,10 +581,8 @@ function update() {
         }
     });
 
-
     bot.bullets = bot.bullets.filter(b => {
         if (b.toRemove) return false;
-
         if (!b.isBroken && (b.y > LOGICAL_H || b.y < -100 || b.x < -100 || b.x > LOGICAL_W + 100)) return false;
         return true;
     });
@@ -608,7 +615,6 @@ function update() {
 
     clouds.forEach(cloud => {
         cloud.x += cloud.speed;
-
         if (cloud.x > LOGICAL_W) {
             cloud.x = -cloud.width;
             cloud.y = Math.random() * (LOGICAL_H / 2 - 50);
@@ -625,11 +631,9 @@ function update() {
         gameState = 'GAMEOVER';
         let goldEarned = 0;
         if (currentLevel > gameData.highestLevelCompleted) {
-
             goldEarned = 50 + (currentLevel * 10);
             gameData.highestLevelCompleted = currentLevel;
         } else {
-
             goldEarned = 10 + (currentLevel * 2);
         }
         gameData.gold += goldEarned;
@@ -643,17 +647,12 @@ function update() {
 
 function draw() {
     ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
-
-
-
     if (bgImg.complete && bgImg.naturalHeight !== 0) {
         ctx.drawImage(bgImg, 0, 0, LOGICAL_W, LOGICAL_H);
     } else {
-
         ctx.fillStyle = '#87CEEB';
         ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
     }
-
 
     clouds.forEach(cloud => {
         if (cloud.img.complete && cloud.img.naturalHeight !== 0) {
@@ -661,12 +660,8 @@ function draw() {
         }
     });
 
-
-
     drawEntity(player, playerImg);
     drawEntity(bot, botImg);
-
-
     const playerBottom = player.y + player.height;
     const pBarW = player.width + 20, pBarH = 14;
     const pBarX = player.x + (player.width - pBarW) / 2, pBarY = playerBottom + 8;
@@ -675,7 +670,6 @@ function draw() {
     ctx.fillStyle = '#4ade80'; ctx.fillRect(pBarX, pBarY, pFillW > 0 ? pFillW : 0, pBarH);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(`${Math.max(0, Math.ceil(player.hp))} / ${player.maxHp}`, pBarX + pBarW / 2, pBarY + pBarH / 2 + 1);
-
 
     player.bullets.forEach(b => { if (playerBulletImg.complete) ctx.drawImage(playerBulletImg, b.x, b.y, b.width, b.height); });
     bot.bullets.forEach(b => {
@@ -686,7 +680,6 @@ function draw() {
             ctx.globalAlpha = 1.0;
         }
     });
-
 
     healthPacks.forEach(hp => {
         if (healthPackImg.complete) ctx.drawImage(healthPackImg, hp.x, hp.y, hp.width, hp.height);
@@ -709,7 +702,6 @@ function draw() {
             ctx.restore();
         }
     });
-
 
     particles.forEach(p => {
         ctx.globalAlpha = p.lifespan / 60; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
@@ -740,12 +732,11 @@ function bindButton(el, keyName) {
     window.addEventListener('mouseup', e => { if (keys[keyName]) { keys[keyName] = false; } });
     el.addEventListener('touchcancel', e => { keys[keyName] = false; }, { passive: false });
 }
-bindButton(document.getElementById('btnLeft'), 'ArrowLeft');
-bindButton(document.getElementById('btnRight'), 'ArrowRight');
+
+
 window.addEventListener('resize', fitCanvasToScreen);
 
 function shootPlayer() {
-
     if (player.hasSpecialShot) {
         const bulletWidth = 20 * 10;
         const bulletHeight = 20 * 10;
@@ -765,7 +756,6 @@ function shootPlayer() {
         player.hasSpecialShot = false;
         return;
     }
-
 
     const fireRateInSeconds = player.fireRate / 60;
     const shotsPerSecond = 1 / fireRateInSeconds;

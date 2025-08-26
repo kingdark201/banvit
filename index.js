@@ -774,8 +774,8 @@ function shootPlayer() {
     else if (shotsPerSecond >= 3.5) shotCount = 4;
     else if (shotsPerSecond >= 2.5) shotCount = 3;
     else if (shotsPerSecond >= 1.5) shotCount = 2;
-    const bulletWidth = 20;
-    const bulletHeight = 20;
+    const bulletWidth = 30;
+    const bulletHeight = 30;
     const bulletSpeed = 8;
     const bulletSpacing = 25;
     const centerX = player.x + player.width / 2;

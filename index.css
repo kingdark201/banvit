@@ -12,7 +12,8 @@
     --hp-player-fill: #4ade80;
     /* Màu thanh máu Player */
     --hp-bg: rgba(0, 0, 0, 0.4);
-    --danger-color: #dc2626; /* THÊM MỚI */
+    --danger-color: #dc2626;
+    /* THÊM MỚI */
 }
 
 html,
@@ -26,6 +27,14 @@ body {
     touch-action: manipulation;
     color: var(--text);
     overflow: hidden;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+a{
+    text-decoration: none;
+    color: #fff;
 }
 
 .wrap {

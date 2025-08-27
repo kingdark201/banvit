@@ -4,6 +4,7 @@ const upgradeModal = document.getElementById('upgradeModal');
 const levelSelectModal = document.getElementById('levelSelectModal');
 const botInfoModal = document.getElementById('botInfoModal');
 const resetConfirmModal = document.getElementById('resetConfirmModal');
+const reload = document.getElementById('btnReload');
 
 
 const playerShootSound = document.getElementById('playerShootSound');
@@ -455,6 +456,7 @@ document.getElementById('closeBotInfoModal').onclick = () => { playButtonClick()
 document.getElementById('btnReset').onclick = openResetConfirmModal;
 document.getElementById('btnCancelReset').onclick = () => { playButtonClick(); resetConfirmModal.style.display = 'none'; };
 document.getElementById('btnConfirmReset').onclick = executeReset;
+reload.onclick = () => {location.reload();};
 
 canvas.addEventListener('mousedown', handleDragStart);
 window.addEventListener('mousemove', handleDragMove); 
